@@ -64,7 +64,7 @@ pip install tensorflow
 For more detailed tensorflow gpu installation instructions and options, refer to [this documentation](https://www.tensorflow.org/install).
 
 ```bash
-###[INFO] set num of iterations to run (train.py) on (run_train.sh) file
+###[INFO] set num of iterations to run (train.py) on (run_train.sh) file /// this automatically saves training info for every 20 epochs.
 bash run_train.sh
 ```
 recommended new environment to infer models only on cpu 
