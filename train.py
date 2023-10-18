@@ -426,7 +426,7 @@ if __name__ == '__main__':
     history = model.fit(train_gen, 
                         initial_epoch=last_epoch,
                         steps_per_epoch = train_num, 
-                        epochs = last_epoch + 5, 
+                        epochs = last_epoch + 20, 
                         verbose = 1, 
                         validation_data = valid_gen, 
                         validation_steps = valid_num, 
