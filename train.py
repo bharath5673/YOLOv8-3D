@@ -58,11 +58,6 @@ select_model = 'mobilenetv2'
 
 
 
-
-
-# label_dir = '/home/bharath/Downloads/test_codes/3Dbbox/kitti/training/copy/labels_2_1/'
-# image_dir = '/home/bharath/Downloads/test_codes/3Dbbox/kitti/training/copy/images_2_1/'
-
 label_dir = '/home/bharath/Downloads/test_codes/3Dbbox/kitti/training/label_2/'
 image_dir = '/home/bharath/Downloads/test_codes/3Dbbox/kitti/training/image_2/'
 
