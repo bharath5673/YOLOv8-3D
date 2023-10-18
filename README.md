@@ -56,6 +56,20 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 ### Run
 #### for training
 
+```
+####### select model on train.py  ########
+# select_model = 'resnet50'
+# select_model ='resnet101'
+# select_model = 'resnet152'
+# select_model = 'vgg11'
+# select_model = 'vgg16'
+# select_model = 'vgg19'
+# select_model = 'efficientnetb0'
+# select_model = 'efficientnetb5'
+select_model = 'mobilenetv2'
+```
+
+
 ```bash
 conda create -n test1 python=3.10 -y
 conda activate test1
