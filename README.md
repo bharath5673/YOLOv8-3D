@@ -20,8 +20,17 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 - Flexible Integration: EasyADAS is designed to seamlessly integrate with existing ADAS systems and frameworks.
 - Comprehensive Documentation: Extensive documentation and examples ensure that you can get started quickly and easily.
 - Scalable: Scale your detection capabilities by leveraging EasyADAS in a variety of scenarios and environments.
-- supports all best and and state of the art CNN models
-- added augmentations for 3d 
+- supports all best and and state of the art CNN models and easy training setup.
+- added augmentations for 3d .
+
+## special features
+
+<div align="center">
+<img src="assets/Screenshot from 2023-10-18 16-17-03.png" width="350"/>    <img src="assets/mobilenetv2_results_plot.png" width="600"/> 
+<p>
+  augmentations for better training, automated backup training and  results plot
+</p>
+</div>
 
 ## Get started
 
