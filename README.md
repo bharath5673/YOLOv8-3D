@@ -56,6 +56,14 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 ### Run
 #### for training
 
+```bash
+conda create -n test1 python=3.10 -y
+conda activate test1
+pip install tensorflow
+```
+For more detailed tensorflow gpu installation instructions and options, refer to [this documentation](https://www.tensorflow.org/install).
+
+
 ```
 ####### select model on train.py  ########
 # select_model = 'resnet50'
@@ -70,12 +78,6 @@ select_model = 'mobilenetv2'
 ```
 
 
-```bash
-conda create -n test1 python=3.10 -y
-conda activate test1
-pip install tensorflow
-```
-For more detailed tensorflow gpu installation instructions and options, refer to [this documentation](https://www.tensorflow.org/install).
 
 ```bash
 ###[INFO] set num of iterations to run (train.py) on (run_train.sh) file /// this automatically saves training info for every 20 epochs.
