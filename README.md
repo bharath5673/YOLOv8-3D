@@ -5,7 +5,12 @@ EasyADAS is a lightweight and user-friendly library designed for efficient 2D an
 
 ###### This API supports for easy understanding and integrate 3D perception, systems can make more informed decisions and operate effectively in complex, real-world environments.
 
-![demo](demo.gif)
+
+<div align="center">
+<p>
+<img src="assets/demo.gif" width="1000"/>
+</p>
+<br>
 
 ### Key Features:
 
@@ -16,6 +21,7 @@ EasyADAS is a lightweight and user-friendly library designed for efficient 2D an
 - Comprehensive Documentation: Extensive documentation and examples ensure that you can get started quickly and easily.
 - Scalable: Scale your detection capabilities by leveraging EasyADAS in a variety of scenarios and environments.
 - supports all best and and state of the art CNN models
+- added augmentations for 3d 
 
 ## Get started
 
