@@ -3,14 +3,14 @@
 
 EasyADAS is a lightweight and user-friendly library designed for efficient 2D and 3D bounding box object detection in Advanced Driver Assistance Systems (ADAS). With its intuitive API and comprehensive features, EasyADAS makes it straightforward to integrate object detection capabilities into your ADAS projects.
 
-###### This API supports for easy understanding and integrate 3D perception, systems can make more informed decisions and operate effectively in complex, real-world environments.
-
-
 <div align="center">
 <p>
 <img src="assets/demo.gif" width="1000"/>
+This API supports for easy understanding and integrate 3D perception, systems can make more informed decisions and operate effectively in complex, real-world environments.
 </p>
 <br>
+</div>
+
 
 ### Key Features:
 
