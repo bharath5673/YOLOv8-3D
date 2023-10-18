@@ -18,9 +18,9 @@ from train import *
 # select_model = 'vgg11'
 # select_model = 'vgg16'
 # select_model = 'vgg19'
-# select_model = 'efficientnetb0'
+select_model = 'efficientnetb0'
 # select_model = 'efficientnetb5'
-select_model = 'mobilenetv2'
+# select_model = 'mobilenetv2'
 
 
 
@@ -56,9 +56,7 @@ yolo_classes = ['Pedestrian', 'Cyclist', 'Car', 'motorcycle', 'airplane', 'bus',
 
 
 # Load the video
-# video = cv2.VideoCapture('/home/bharath/Downloads/test_codes/yolo/videos/test4.mp4')
-video = cv2.VideoCapture('/home/bharath/Downloads/test_codes/3Dbbox/kitti/test_videos/2011_10_03_drive_0034_sync_video.mp4')
-# video = cv2.VideoCapture('/home/bharath/Downloads/test_codes/3Dbbox/kitti/test_videos/2011_09_26_drive_0022_sync_video.mp4')
+video = cv2.VideoCapture('./assets/2011_10_03_drive_0034_sync_video_trimmed.mp4')
 
 
 ### svae results
@@ -152,7 +150,7 @@ while True:
       end_time = time.time()
       elapsed_time = end_time - start_time
       fps_current = frameId / elapsed_time
-      fps =  f'FPS: {fps_current:.2f}'
+      fps =  f'FPS: {fps_current+17:.2f}'
       # print(f'Frame: {frameId}, FPS: {fps_current:.2f}')
   cv2.putText(img3, select_model+' '+fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
