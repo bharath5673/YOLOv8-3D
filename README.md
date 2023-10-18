@@ -22,6 +22,7 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 - Scalable: Scale your detection capabilities by leveraging EasyADAS in a variety of scenarios and environments.
 - supports all best and and state of the art CNN models and easy training setup.
 - added augmentations for 3d .
+- api supports Resnets, VGG nets, mobilenets, Efficientnets 
 
 ## special features
 
