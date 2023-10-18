@@ -41,6 +41,7 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 - Tensorflow
 - PyTorch
 - NumPy
+- KITTI 3d dataset [download from here](https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d)
 
 
 ### Usage
@@ -98,6 +99,7 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 * [https://github.com/DingXiaoH/RepVGG](https://github.com/DingXiaoH/RepVGG)
 * [https://github.com/JUGGHM/OREPA_CVPR2022](https://github.com/JUGGHM/OREPA_CVPR2022)
 * [https://github.com/TexasInstruments/edgeai-yolov5/tree/yolo-pose](https://github.com/TexasInstruments/edgeai-yolov5/tree/yolo-pose)
+* [https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d](https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d)
 * [https://opencv.org/](https://opencv.org/)
 * [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)
 * [https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving](https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving)
