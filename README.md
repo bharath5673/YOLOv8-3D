@@ -1,7 +1,7 @@
 # YOLOv8-3D
 ## Description:
 
-EasyADAS is a lightweight and user-friendly library designed for efficient 2D and 3D bounding box object detection in Advanced Driver Assistance Systems (ADAS). With its intuitive API and comprehensive features, EasyADAS makes it straightforward to integrate object detection capabilities into your ADAS projects.
+YOLOv8-3D is a lightweight and user-friendly library designed for efficient 2D and 3D bounding box object detection in Advanced Driver Assistance Systems (ADAS). With its intuitive API and comprehensive features, EasyADAS makes it straightforward to integrate object detection capabilities into your ADAS projects.
 
 <div align="center">
 <p>
@@ -14,7 +14,7 @@ This API supports for easy understanding and integrate 3D perception, systems ca
 
 ### Key Features:
 
-- Simplified API: EasyADAS provides a straightforward API that allows you to quickly implement object detection in your ADAS system.
+- Simplified API: YOLOv8-3D provides a straightforward API that allows you to quickly implement object detection in your ADAS system.
 - 2D and 3D Bounding Boxes: Detect both 2D and 3D bounding boxes for accurate spatial understanding of objects.
 - Efficient Processing: Leverage optimized algorithms for fast and reliable object detection performance.
 - Flexible Integration: EasyADAS is designed to seamlessly integrate with existing ADAS systems and frameworks.
