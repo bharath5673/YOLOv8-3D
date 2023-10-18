@@ -5,6 +5,8 @@ EasyADAS is a lightweight and user-friendly library designed for efficient 2D an
 
 ###### This API supports for easy understanding and integrate 3D perception, systems can make more informed decisions and operate effectively in complex, real-world environments.
 
+![demo](demo.gif)
+
 ### Key Features:
 
 - Simplified API: EasyADAS provides a straightforward API that allows you to quickly implement object detection in your ADAS system.
@@ -69,12 +71,27 @@ Contributions are welcome! If you find any issues or have suggestions for improv
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-### Acknowledgments
 
-- YOLOv5: [https://github.com/ultralytics/yolov5](https://github.com/ultralytics/yolov5)
-- OpenCV: [https://opencv.org/](https://opencv.org/)
-- YOLOV8: [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)
-- 3dbbox: [https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving](https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving)
-- SMOKE: [https://github.com/lzccccc/SMOKE](https://github.com/lzccccc/SMOKE)
-- DEVIANT : [https://github.com/abhi1kumar/DEVIANT.git](https://github.com/abhi1kumar/DEVIANT.git)
-- 
+
+### Acknowledgements
+
+<details><summary> <b>Expand</b> </summary>
+
+* [https://github.com/AlexeyAB/darknet](https://github.com/AlexeyAB/darknet)
+* [https://github.com/WongKinYiu/yolor](https://github.com/WongKinYiu/yolor)
+* [https://github.com/WongKinYiu/PyTorch_YOLOv4](https://github.com/WongKinYiu/PyTorch_YOLOv4)
+* [https://github.com/WongKinYiu/ScaledYOLOv4](https://github.com/WongKinYiu/ScaledYOLOv4)
+* [https://github.com/Megvii-BaseDetection/YOLOX](https://github.com/Megvii-BaseDetection/YOLOX)
+* [https://github.com/ultralytics/yolov3](https://github.com/ultralytics/yolov3)
+* [https://github.com/ultralytics/yolov5](https://github.com/ultralytics/yolov5)
+* [https://github.com/DingXiaoH/RepVGG](https://github.com/DingXiaoH/RepVGG)
+* [https://github.com/JUGGHM/OREPA_CVPR2022](https://github.com/JUGGHM/OREPA_CVPR2022)
+* [https://github.com/TexasInstruments/edgeai-yolov5/tree/yolo-pose](https://github.com/TexasInstruments/edgeai-yolov5/tree/yolo-pose)
+* [https://opencv.org/](https://opencv.org/)
+* [https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)
+* [https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving](https://github.com/lzccccc/3d-bounding-box-estimation-for-autonomous-driving)
+* [https://github.com/lzccccc/SMOKE](https://github.com/lzccccc/SMOKE)
+* [https://github.com/abhi1kumar/DEVIANT.git](https://github.com/abhi1kumar/DEVIANT.git)
+
+</details>
+  
