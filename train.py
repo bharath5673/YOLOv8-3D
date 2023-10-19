@@ -401,7 +401,6 @@ if __name__ == '__main__':
     # minimizer  = SGD(learning_rate=0.000001, momentum=0.8)
     minimizer = Adam(learning_rate=1e-5)
     model.compile(
-                    # optimizer='adam',#minimizer,
                     optimizer=minimizer,
                     loss={
                         'dimension': 'mean_squared_error', 
