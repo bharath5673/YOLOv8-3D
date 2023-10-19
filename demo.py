@@ -150,7 +150,7 @@ while True:
       end_time = time.time()
       elapsed_time = end_time - start_time
       fps_current = frameId / elapsed_time
-      fps =  f'FPS: {fps_current+17:.2f}'
+      fps =  f'FPS: {fps_current:.2f}'
       # print(f'Frame: {frameId}, FPS: {fps_current:.2f}')
   cv2.putText(img3, select_model+' '+fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
