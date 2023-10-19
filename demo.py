@@ -146,10 +146,10 @@ while True:
 
   # Calculate the current time in seconds
   current_time = video.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-  if frameId % 20 == 0:  # Calculate FPS every 10 frames
+  if frameId % 20 == 0:  # Calculate FPS every 20 frames
       end_time = time.time()
       elapsed_time = end_time - start_time
-      fps_current = frameId / elapsed_time
+      fps_current = 20 / elapsed_time
       fps =  f'FPS: {fps_current:.2f}'
       # print(f'Frame: {frameId}, FPS: {fps_current:.2f}')
   cv2.putText(img3, select_model+' '+fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
