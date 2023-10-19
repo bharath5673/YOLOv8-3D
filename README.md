@@ -83,7 +83,7 @@ select_model = 'mobilenetv2'
 ###[INFO] set num of iterations to run (train.py) on (run_train.sh) file /// this automatically saves training info for every 20 epochs.
 bash run_train.sh
 ```
-recommended new environment to infer models only on cpu 
+[recommended](https://github.com/bharath5673/YOLOv8-3D/issues/1#issuecomment-1770855065) new environment to infer models only on cpu 
 #### for testing
 ```bash
 conda create -n test2 python=3.10 -y
