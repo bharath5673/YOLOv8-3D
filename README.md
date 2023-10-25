@@ -1,4 +1,4 @@
-# YOLOv8-3D
+# YOLOv8-3D (tracker)
 
 
 ## Description:
