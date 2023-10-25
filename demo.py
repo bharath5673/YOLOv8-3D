@@ -18,9 +18,9 @@ from train import *
 # select_model = 'vgg11'
 # select_model = 'vgg16'
 # select_model = 'vgg19'
-# select_model = 'efficientnetb0'
+select_model = 'efficientnetb0'
 # select_model = 'efficientnetb5'
-select_model = 'mobilenetv2'
+# select_model = 'mobilenetv2'
 
 
 
@@ -45,7 +45,6 @@ dims_avg = {'Car': np.array([1.52131309, 1.64441358, 3.85728004]),
 
 # Load a 2D model
 bbox2d_model = YOLO('yolov8n-seg.pt')  # load an official model
-# bbox2d_model.cuda()
 # set model parameters
 bbox2d_model.overrides['conf'] = 0.9  # NMS confidence threshold
 bbox2d_model.overrides['iou'] = 0.45  # NMS IoU threshold
@@ -70,97 +69,154 @@ out = cv2.VideoWriter(select_model+'_output_video.mp4', fourcc, 15, (frame_width
 
 
 
+def process2D(image, track = True, device ='cpu'):
+
+    bboxes = []
+    # Predict with the model
+    if track is True:
+        results = bbox2d_model.track(image, verbose=False, device=device, persist=True)  # predict and track on an image
+        for predictions in results:
+            if predictions is None:
+                continue  # Skip this image if YOLO fails to detect any objects
+            if predictions.boxes is None or predictions.masks is None or predictions.boxes.id is None:
+                continue  # Skip this image if there are no boxes or masks
+
+            for bbox, masks in zip(predictions.boxes, predictions.masks):
+                for scores, classes, bbox_coords, id_ in zip(bbox.conf, bbox.cls, bbox.xyxy, bbox.id):
+                    xmin    = bbox_coords[0]
+                    ymin    = bbox_coords[1]
+                    xmax    = bbox_coords[2]
+                    ymax    = bbox_coords[3]
+                    cv2.rectangle(image, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0,0,225), 2)
+                    bboxes.append([bbox_coords, scores, classes, id_])
+
+                    label = (' '+f'ID: {int(id_)}'+' '+str(predictions.names[int(classes)]) + ' ' + str(round(float(scores) * 100, 1)) + '%')
+                    text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 2, 1)
+                    dim, baseline = text_size[0], text_size[1]
+                    cv2.rectangle(image, (int(xmin), int(ymin)), ((int(xmin) + dim[0] //3) - 20, int(ymin) - dim[1] + baseline), (30,30,30), cv2.FILLED)
+                    cv2.putText(image,label,(int(xmin), int(ymin) - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+
+            ## object segmentations
+            masks = predictions.masks
+            if masks is not None:
+                for mask in masks.xy:
+                    polygon = mask
+                    cv2.polylines(image, [np.int32(polygon)], True, (255, 0, 0), thickness=2)
+
+    if not track:
+        results = bbox2d_model.predict(image, verbose=False, device=device)  # predict on an image
+        for predictions in results:
+            if predictions is None:
+                continue  # Skip this image if YOLO fails to detect any objects
+            if predictions.boxes is None or predictions.masks is None:
+                continue  # Skip this image if there are no boxes or masks
+
+            for bbox, masks in zip(predictions.boxes, predictions.masks):              
+                for scores, classes, bbox_coords in zip(bbox.conf, bbox.cls, bbox.xyxy):
+                    xmin    = bbox_coords[0]
+                    ymin    = bbox_coords[1]
+                    xmax    = bbox_coords[2]
+                    ymax    = bbox_coords[3]
+                    cv2.rectangle(image, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0,0,225), 2)
+                    bboxes.append([bbox_coords, scores, classes])
+
+                    label = (' '+str(predictions.names[int(classes)]) + ' ' + str(round(float(scores) * 100, 1)) + '%')
+                    text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 2, 1)
+                    dim, baseline = text_size[0], text_size[1]
+                    cv2.rectangle(image, (int(xmin), int(ymin)), ((int(xmin) + dim[0] //3) - 20, int(ymin) - dim[1] + baseline), (30,30,30), cv2.FILLED)
+                    cv2.putText(image,label,(int(xmin), int(ymin) - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+
+                ## object segmentations
+                masks = predictions.masks
+                if masks is not None:
+                    for mask in masks.xy:
+                        polygon = mask
+                        cv2.polylines(image, [np.int32(polygon)], True, (255, 0, 0), thickness=2)
+
+    return image, bboxes
+
+
+def process3D(img, bboxes2d):
+    DIMS = []
+    bboxes = []
+    for item in bboxes2d:
+        bbox_coords, scores, classes, *id_ = item if len(item) == 4 else (*item, None)
+        padding = 0  # Set the padding value
+        xmin = max(0, bbox_coords[0] - padding)
+        ymin = max(0, bbox_coords[1] - padding)
+        xmax = min(frame.shape[1], bbox_coords[2] + padding)
+        ymax = min(frame.shape[0], bbox_coords[3] + padding)
+
+
+        crop = img[int(ymin) : int(ymax), int(xmin) : int(xmax)]
+        patch = tf.convert_to_tensor(crop, dtype=tf.float32)
+        patch /= 255.0  # Normalize to [0,1]
+        patch = tf.image.resize(patch, (224, 224))  # Resize to 224x224
+        patch = tf.expand_dims(patch, axis=0)  # Equivalent to reshape((1, *crop.shape))
+        prediction = bbox3d_model.predict(patch, verbose = 0)
+
+        dim = prediction[0][0]
+        bin_anchor = prediction[1][0]
+        bin_confidence = prediction[2][0]
+
+        ###refinement dimension
+        try:
+            dim += dims_avg[str(yolo_classes[int(classes.cpu().numpy())])] + dim
+            DIMS.append(dim)
+        except:
+            dim = DIMS[-1]
+
+        bbox_ = [int(xmin), int(ymin), int(xmax), int(ymax)]
+        theta_ray = calc_theta_ray(frame, bbox_, P2)
+        # update with predicted alpha, [-pi, pi]
+        alpha = recover_angle(bin_anchor, bin_confidence, bin_size)
+        alpha = alpha - theta_ray
+        bboxes.append([bbox_, dim, alpha, theta_ray])
+
+    return bboxes
+
+
 
 frameId = 0
 start_time = time.time()
 fps = str()
-DIMS = []
-
 # Process each frame of the video
 while True:
-  frameId+=1
-  success, frame = video.read()
+    frameId+=1
+    success, frame = video.read()
+    if not success:
+        break
+
+    img = frame.copy() 
+    img2 = frame.copy() 
+    img3 = frame.copy() 
+
+    ## process 2D and 3D boxes
+    img2D, bboxes2d = process2D(img2, track=True)
+    if len(bboxes2d) > 0:
+        bboxes3D = process3D(img, bboxes2d)
+        if len(bboxes3D) > 0:
+            for bbox_, dim, alpha, theta_ray in bboxes3D:
+                plot3d(img3, P2, bbox_, dim, alpha, theta_ray)
 
 
-  img = frame.copy() 
-  img2 = frame.copy() 
-  img3 = frame.copy() 
-  if not success:
-    break
-
-  # Perform featuresect detection on the frame
-  results = bbox2d_model(frame, verbose=False)  # predict on an image
-  # print(results)
-
-  ## object detections
-  for predictions in results:
-      bbox = predictions.boxes.xyxy
-      if predictions.boxes.cls.numel() > 0:
-          class_id = predictions.boxes.cls[0].cpu()
-      else:
-          class_id = None
-      if bbox is not None:
-          for detection in bbox:
-              padding = 0  # Set the padding value
-              xmin = max(0, detection[0] - padding)
-              ymin = max(0, detection[1] - padding)
-              xmax = min(frame.shape[1], detection[2] + padding)
-              ymax = min(frame.shape[0], detection[3] + padding)
-              cv2.rectangle(img2, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0,0,225), 1)
-              crop = img[int(ymin) : int(ymax), int(xmin) : int(xmax)]
-
-              patch = tf.convert_to_tensor(crop, dtype=tf.float32)
-              patch /= 255.0  # Normalize to [0,1]
-              patch = tf.image.resize(patch, (224, 224))  # Resize to 224x224
-              patch = tf.expand_dims(patch, axis=0)  # Equivalent to reshape((1, *crop.shape))
-              prediction = bbox3d_model.predict(patch, verbose = 0)
-
-              dim = prediction[0][0]
-              bin_anchor = prediction[1][0]
-              bin_confidence = prediction[2][0]
-
-              ###refinement dimension
-              try:
-                  dim += dims_avg[str(yolo_classes[int(class_id.cpu().numpy())])] + dim
-                  DIMS.append(dim)
-              except:
-                  dim = DIMS[-1]
-
-              bbox_ = [int(xmin), int(ymin), int(xmax), int(ymax)]
-              theta_ray = calc_theta_ray(frame, bbox_, P2)
-              # update with predicted alpha, [-pi, pi]
-              alpha = recover_angle(bin_anchor, bin_confidence, bin_size)
-              alpha = alpha - theta_ray
-
-              ## plot3d bbox on image
-              plot3d(img3, P2, bbox_, dim, alpha, theta_ray)
+    # Calculate the current time in seconds
+    current_time = video.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+    if frameId % 20 == 0:  # Calculate FPS every 10 frames
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        fps_current = frameId / elapsed_time
+        fps =  f'FPS: {fps_current:.2f}'
+        # print(f'Frame: {frameId}, FPS: {fps_current:.2f}')
+    cv2.putText(img3, select_model+' '+fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
 
 
-  ## object segmentations
-  masks = predictions.masks
-  if masks is not None:
-      for mask in masks.xy:
-          polygon = mask
-          cv2.polylines(img3, [np.int32(polygon)], True, (0, 0, 225), thickness=2)
-
-
-  # Calculate the current time in seconds
-  current_time = video.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-  if frameId % 20 == 0:  # Calculate FPS every 20 frames
-      end_time = time.time()
-      elapsed_time = end_time - start_time
-      fps_current = 20 / elapsed_time
-      fps =  f'FPS: {fps_current:.2f}'
-      # print(f'Frame: {frameId}, FPS: {fps_current:.2f}')
-  cv2.putText(img3, select_model+' '+fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
-
-
-  # Display the frame
-  cv2.imshow("2D", img2)
-  cv2.imshow("3D", img3)
-  out.write(img3)
-  if cv2.waitKey(1) & 0xFF == ord('q'):
-    break
+    # Display the frame
+    cv2.imshow("2D", img2)
+    cv2.imshow("3D", img3)
+    out.write(img3)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
 # Release the video capture featuresect
 video.release()
