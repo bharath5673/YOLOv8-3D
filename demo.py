@@ -72,7 +72,7 @@ tracking_trajectories = {}
 def process2D(image, track = True, device ='cpu'):
     bboxes = []
     if track is True:
-        results = bbox2d_model.track(image, verbose=False, device=device)
+        results = bbox2d_model.track(image, verbose=False, device=device, persist=True)
 
         for id_ in list(tracking_trajectories.keys()):
             if id_ not in [int(bbox.id) for predictions in results if predictions is not None for bbox in predictions.boxes if bbox.id is not None]:
