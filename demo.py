@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import time
 from ultralytics import YOLO
+from collections import deque
 
 from libs.bbox3d_utils import *
 from train import * 
@@ -21,7 +22,6 @@ from train import *
 select_model = 'efficientnetb0'
 # select_model = 'efficientnetb5'
 # select_model = 'mobilenetv2'
-
 
 
 # Load the 3D model
@@ -68,20 +68,25 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Change the codec if needed (e.g., 'X
 out = cv2.VideoWriter(select_model+'_output_video.mp4', fourcc, 15, (frame_width, frame_height))
 
 
-
+tracking_trajectories = {}
 def process2D(image, track = True, device ='cpu'):
-
     bboxes = []
-    # Predict with the model
     if track is True:
-        results = bbox2d_model.track(image, verbose=False, device=device, persist=True)  # predict and track on an image
+        results = bbox2d_model.track(image, verbose=False, device=device)
+
+        for id_ in list(tracking_trajectories.keys()):
+            if id_ not in [int(bbox.id) for predictions in results if predictions is not None for bbox in predictions.boxes if bbox.id is not None]:
+                del tracking_trajectories[id_]
+
         for predictions in results:
             if predictions is None:
-                continue  # Skip this image if YOLO fails to detect any objects
+                continue
+
             if predictions.boxes is None or predictions.masks is None or predictions.boxes.id is None:
-                continue  # Skip this image if there are no boxes or masks
+                continue
 
             for bbox, masks in zip(predictions.boxes, predictions.masks):
+                ## object detections
                 for scores, classes, bbox_coords, id_ in zip(bbox.conf, bbox.cls, bbox.xyxy, bbox.id):
                     xmin    = bbox_coords[0]
                     ymin    = bbox_coords[1]
@@ -96,12 +101,25 @@ def process2D(image, track = True, device ='cpu'):
                     cv2.rectangle(image, (int(xmin), int(ymin)), ((int(xmin) + dim[0] //3) - 20, int(ymin) - dim[1] + baseline), (30,30,30), cv2.FILLED)
                     cv2.putText(image,label,(int(xmin), int(ymin) - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
-            ## object segmentations
-            masks = predictions.masks
-            if masks is not None:
+                    centroid_x = (xmin + xmax) / 2
+                    centroid_y = (ymin + ymax) / 2
+
+                    # Append centroid to tracking_points
+                    if id_ is not None and int(id_) not in tracking_trajectories:
+                        tracking_trajectories[int(id_)] = deque(maxlen=5)
+                    if id_ is not None:
+                        tracking_trajectories[int(id_)].append((centroid_x, centroid_y))
+
+                # Draw trajectories
+                for id_, trajectory in tracking_trajectories.items():
+                    for i in range(1, len(trajectory)):
+                        cv2.line(image, (int(trajectory[i-1][0]), int(trajectory[i-1][1])), (int(trajectory[i][0]), int(trajectory[i][1])), (255, 255, 255), 2)
+                
+                ## object segmentations
                 for mask in masks.xy:
                     polygon = mask
                     cv2.polylines(image, [np.int32(polygon)], True, (255, 0, 0), thickness=2)
+
 
     if not track:
         results = bbox2d_model.predict(image, verbose=False, device=device)  # predict on an image
@@ -111,7 +129,8 @@ def process2D(image, track = True, device ='cpu'):
             if predictions.boxes is None or predictions.masks is None:
                 continue  # Skip this image if there are no boxes or masks
 
-            for bbox, masks in zip(predictions.boxes, predictions.masks):              
+            for bbox, masks in zip(predictions.boxes, predictions.masks): 
+                ## object detections
                 for scores, classes, bbox_coords in zip(bbox.conf, bbox.cls, bbox.xyxy):
                     xmin    = bbox_coords[0]
                     ymin    = bbox_coords[1]
@@ -127,11 +146,9 @@ def process2D(image, track = True, device ='cpu'):
                     cv2.putText(image,label,(int(xmin), int(ymin) - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
                 ## object segmentations
-                masks = predictions.masks
-                if masks is not None:
-                    for mask in masks.xy:
-                        polygon = mask
-                        cv2.polylines(image, [np.int32(polygon)], True, (255, 0, 0), thickness=2)
+                for mask in masks.xy:
+                    polygon = mask
+                    cv2.polylines(image, [np.int32(polygon)], True, (255, 0, 0), thickness=2)
 
     return image, bboxes
 
