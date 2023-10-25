@@ -27,7 +27,7 @@ YOLOv8-3D is a lightweight and user-friendly library designed for efficient 2D a
 - Scalable: Scale your detection capabilities by leveraging EasyADAS in a variety of scenarios and environments.
 - supports all best and and state of the art CNN models and easy training setup.
 - added augmentations for 3d .
-- api supports Resnets, VGG nets, mobilenets, Efficientnets 
+- api supports Resnets, VGG nets, mobilenets, Efficientnets , MOT-Tracker
 
 ## special features
 
