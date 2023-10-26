@@ -66,7 +66,7 @@ conda create -n test1 python=3.10 -y
 conda activate test1
 pip install tensorflow
 ```
-For more detailed tensorflow gpu installation instructions and options, refer to [this documentation](https://www.tensorflow.org/install).
+For more detailed tensorflow gpu installation instructions and options, refer to [this documentation]([https://www.tensorflow.org/install](https://www.tensorflow.org/install/pip)).
 
 
 ```
