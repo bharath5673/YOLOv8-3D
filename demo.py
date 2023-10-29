@@ -51,7 +51,7 @@ bbox2d_model.overrides['iou'] = 0.45  # NMS IoU threshold
 bbox2d_model.overrides['agnostic_nms'] = False  # NMS class-agnostic
 bbox2d_model.overrides['max_det'] = 1000  # maximum number of detections per image
 bbox2d_model.overrides['classes'] = 2 ## define classes
-yolo_classes = ['Pedestrian', 'Cyclist', 'Car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat']
+yolo_classes = ['Pedestrian', 'Cyclist', 'Car', 'motorcycle', 'airplane', 'Van', 'train', 'Truck', 'boat']
 
 
 # Load the video
