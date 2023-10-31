@@ -50,7 +50,7 @@ YOLOv8-3D is a lightweight and user-friendly library designed for efficient 2D a
 - PyTorch
 - NumPy
 - KITTI 3d dataset [download from here](https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d)
-
+- [Visualize KITTI Objects in Camera, Point Cloud and BEV in Videos](https://github.com/HengLan/Visualize-KITTI-Objects-in-Videos)
 
 ### Usage
 
