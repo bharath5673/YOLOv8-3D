@@ -103,6 +103,24 @@ python demo.py
 ```
 
 
+<br>
+<img src="https://media0.giphy.com/media/J19OSJKmqCyP7Mfjt1/giphy.gif" width="80" height="30" />    
+<h2> realtime BEV plot </h2>
+
+<div align="center">
+    <a href="https://github.com/bharath5673/YOLOv8-3D">
+        <img src="assets/demo_bev.gif" alt="YOLOv8-3D" width="1000"/>
+    </a>
+</div>
+
+```bash
+set
+## BEV_plot = True
+## TracK = True
+
+```
+
+
 ### Contributing
 
 Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
