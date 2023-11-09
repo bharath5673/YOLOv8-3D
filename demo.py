@@ -205,7 +205,7 @@ def process3D(img, bboxes2d):
 frameId = 0
 start_time = time.time()
 fps = str()
-BEV_plot = False
+BEV_plot = True
 TracK = True
 
 # Process each frame of the video
