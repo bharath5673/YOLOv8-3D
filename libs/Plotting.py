@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.gridspec import GridSpec
 import matplotlib.patches as mpatches
+from collections import deque
 
 """
 Script for handling calibration file
@@ -548,20 +549,15 @@ class Plot3DBoxBev:
         self.proj_matrix = proj_matrix
         self.object_list = object_list
 
-        self.fig = plt.figure(figsize=(20.00, 5.12), dpi=100)
+        self.fig = plt.figure(figsize=(20, 5), dpi=90)
+        plt.subplots_adjust(left=0.001, right=0.999, top=0.999, bottom=0.001)
         gs = GridSpec(1, 4)
         gs.update(wspace=0)
         self.ax = self.fig.add_subplot(gs[0, :3])
-        self.ax2 = self.fig.add_subplot(gs[0, 3:])   
-
-
-        self.fig2 = plt.figure(figsize=(8.00, 8.0), dpi=100)
-        self.ax3 = self.fig2.add_subplot(111)
-        # Set background color to black
-        self.ax3.set_facecolor('black')
+        self.ax2 = self.fig.add_subplot(gs[0, 3:])
 
         self.shape = 900
-        self.scale = 12
+        self.scale = 15
 
         self.COLOR = {
             "car": "blue",
@@ -571,7 +567,9 @@ class Plot3DBoxBev:
             "motorcycle": "cyan",
             "bus": "magenta",
         }
+        plt.close(self.fig)  # Close the figure
 
+        
     def compute_bev(self, dim, loc, rot_y):
         """compute bev"""
         # convert dimension, location and rotation
@@ -580,15 +578,25 @@ class Plot3DBoxBev:
         l = dim[2] * self.scale
         x = loc[0] * self.scale
         y = loc[1] * self.scale
-        z = loc[2] * self.scale
-        rot_y = np.float64(rot_y)
+        z = loc[2] * self.scale 
+        rot_y = np.float64(rot_y*-1)
 
-        R = np.array([[-np.cos(rot_y), np.sin(rot_y)], [np.sin(rot_y), np.cos(rot_y)]])
+        # Scale up or down the dimensions to make the object appear closer
+        scale_factor = 1.2  # Adjust this value as needed
+        h *= scale_factor
+        w *= scale_factor
+        l *= scale_factor
+
+
+        # R = np.array([[-np.cos(rot_y), np.sin(rot_y)], [np.sin(rot_y), np.cos(rot_y)]])
+        R = np.array([[+np.cos(rot_y), -np.sin(rot_y)], [+np.sin(rot_y), np.cos(rot_y)]])
+
         t = np.array([x, z]).reshape(1, 2).T
         x_corners = [0, l, l, 0]  # -l/2
         z_corners = [w, w, 0, 0]  # -w/2
-        x_corners += -w / 2
+        x_corners += -w / 4
         z_corners += -l / 2
+
         # bounding box in object coordinate
         corners_2D = np.array([x_corners, z_corners])
         # rotate
@@ -602,7 +610,9 @@ class Plot3DBoxBev:
 
         return np.vstack((corners_2D, corners_2D[0, :]))
 
-    def draw_bev(self, dim, loc, rot_y, class_object):
+    global tracking_trajectories
+    tracking_trajectories = {}
+    def draw_bev(self, dim, loc, rot_y, class_object, objId):
         color = self.COLOR[class_object]
         """draw bev"""
 
@@ -613,31 +623,43 @@ class Plot3DBoxBev:
         codes[0] = Path.MOVETO
         codes[-1] = Path.CLOSEPOLY
         pth = Path(pred_corners_2d, codes)
-        patch = patches.PathPatch(pth, fill=False, color=color, label="prediction")
-        patch2 = patches.PathPatch(pth, fill=False, color=color, label="prediction")
+        patch = patches.PathPatch(pth, fill=True, color=color, label="prediction")
         self.ax2.add_patch(patch)
 
-        # draw z location of object
-        self.ax2.text(
-            pred_corners_2d[0, 0],
-            pred_corners_2d[0, 1],
-            f"z: {loc[2]:.2f}",
-            fontsize=8,
-            color="white",
-            bbox=dict(facecolor="green", alpha=0.4, pad=0.5),
-        )
+        if objId[0] is not None:
+            # draw z location of object
+            self.ax2.text(
+                pred_corners_2d[0, 0],
+                pred_corners_2d[0, 1],
+                f"z: {loc[2]:.1f}"+' '+str(int(objId[0])),
+                fontsize=8,
+                color="white",
+                bbox=dict(facecolor="green", alpha=0.4, pad=0.5))
+            centroids, ids = self.calculate_centroid(pred_corners_2d, int(objId[0]))
+            # Append centroid to tracking_points
+            if objId[0] is not None and int(objId[0]) not in tracking_trajectories:
+                tracking_trajectories[int(objId[0])] = deque(maxlen=4)
+            else:
+                tracking_trajectories[int(objId[0])].append(centroids)
+            # print(tracking_trajectories)
 
-        self.ax3.add_patch(patch2)
+        else:
+            # draw z location of object
+            self.ax2.text(
+                pred_corners_2d[0, 0],
+                pred_corners_2d[0, 1],
+                f"z: {loc[2]:.1f}",
+                fontsize=8,
+                color="white",
+                bbox=dict(facecolor="green", alpha=0.4, pad=0.5))
 
-        # draw z location of object
-        self.ax3.text(
-            pred_corners_2d[0, 0],
-            pred_corners_2d[0, 1],
-            f"z: {loc[2]:.2f}",
-            fontsize=8,
-            color="white",
-            bbox=dict(facecolor="green", alpha=0.4, pad=0.5),
-        )
+    def calculate_centroid(self, vertices, obj_id):
+        x_sum = np.sum(vertices[:, 0])
+        y_sum = np.sum(vertices[:, 1])
+        centroid_x = x_sum / len(vertices)
+        centroid_y = y_sum / len(vertices)
+        return ((centroid_x, centroid_y), obj_id)
+
 
 
     def compute_3dbox(self, bbox, dim, loc, rot_y):
@@ -683,25 +705,31 @@ class Plot3DBoxBev:
         codes = [Path.LINETO] * verts.shape[0]
         codes[0] = Path.MOVETO
         pth = Path(verts, codes)
-        patch = patches.PathPatch(pth, fill=False, color=color, linewidth=2)
+        patch = patches.PathPatch(pth, fill=False, color=color, linewidth=1)
 
         width = corners_2D[:, 3][0] - corners_2D[:, 1][0]
         height = corners_2D[:, 2][1] - corners_2D[:, 1][1]
         # put a mask on the front
-        front_fill = patches.Rectangle((corners_2D[:, 1]), width, height, fill=True, color=color, alpha=0.4)
+        front_fill = patches.Rectangle((corners_2D[:, 1]), width, height, fill=True, color=color, alpha=0.2)
         self.ax.add_patch(patch)
         self.ax.add_patch(front_fill)
 
-        # draw text of location, dimension, and rotation
-        self.ax.text(
-            corners_2D[:, 1][0],
-            corners_2D[:, 1][1],
-            f"Loc: ({loc[0]:.2f}, {loc[1]:.2f}, {loc[2]:.2f})\nDim: ({dim[0]:.2f}, {dim[1]:.2f}, {dim[2]:.2f})\nYaw: {rot_y:.2f}",
-            fontsize=8,
-            color="white",
-            bbox=dict(facecolor=color, alpha=0.4, pad=0.5),
-        )
+        # Calculate the center of the rectangle
+        center_x = corners_2D[:, 1][0] + width / 2
+        center_y = corners_2D[:, 1][1] + height / 2
+        radius = min(width, height) / 20
+        circle = plt.Circle((center_x, center_y), radius, fill=True, color='white', alpha=0.5)
+        self.ax.add_patch(circle)
 
+        # # draw text of location, dimension, and rotation
+        # self.ax.text(
+        #     corners_2D[:, 1][0],
+        #     corners_2D[:, 1][1],
+        #     f"Loc: ({loc[0]:.2f}, {loc[1]:.2f}, {loc[2]:.2f})\nDim: ({dim[0]:.2f}, {dim[1]:.2f}, {dim[2]:.2f})\nYaw: {rot_y:.2f}",
+        #     fontsize=8,
+        #     color="white",
+        #     bbox=dict(facecolor=color, alpha=0.2, pad=0.5),
+        # )
     def plot(
         self,
         img = None,
@@ -710,28 +738,50 @@ class Plot3DBoxBev:
         dim = None, # dimension of the box (l, w, h)
         loc = None, # location of the box (x, y, z)
         rot_y = None, # rotation of the box around y-axis
+        objId = None, # objids
     ):
         """plot 3d bbox and bev"""
         # initialize bev image
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         bev_img = np.zeros((self.shape, self.shape, 3), np.uint8)
+        self.draw_range(img, bev_img) #camera range
 
+        # self.draw_centroid_trajectories(bev_img)
         # loop through all detections
         if class_object in self.object_list:
             # self.draw_3dbox(class_object, bbox, dim, loc, rot_y)
-            self.draw_bev(dim, loc, rot_y, class_object)
+            self.draw_bev(dim, loc, rot_y, class_object, objId)
+
+
+
+
+    def save_plot(self, path, name):
+        self.fig.savefig(
+            os.path.join(path, f"{name}.png"),
+            dpi=self.fig.dpi,
+            bbox_inches="tight",
+            pad_inches=0.0,
+        )
+
+
+    def show_result(self):
+        # Draw the Matplotlib figure
+        self.fig.canvas.draw()
+
+        # Convert the figure to an image array
+        image = np.fromstring(self.fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+        image = image.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        return image
+
+
+    def draw_range(self, img, bev_img):
 
         # visualize 3D bounding box
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        self.ax.imshow(img_rgb)
+        # img_rgb = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        self.ax.imshow(img)
         self.ax.set_xticks([])
         self.ax.set_yticks([])
-
-        # plot camera view range
-        x1 = np.linspace(0, self.shape / 2)
-        x2 = np.linspace(self.shape / 2, self.shape)
-        self.ax2.plot(x1, self.shape / 2 - x1, ls="--", color="grey", linewidth=1, alpha=0.5)
-        self.ax2.plot(x2, x2 - self.shape / 2, ls="--", color="grey", linewidth=1, alpha=0.5)
-        self.ax2.plot(self.shape / 2, 0, marker="+", markersize=16, markeredgecolor="red")
 
         # visualize bird eye view (bev)
         self.ax2.imshow(bev_img, origin="lower")
@@ -746,81 +796,94 @@ class Plot3DBoxBev:
         legend_entries = [mpatches.Rectangle((0, 0), 1, 1, fc=color, edgecolor='none', label=label) 
                           for color, label in zip(legend_colors, legend_labels)]
 
-        # Add the custom legend to ax2
-        self.ax2.legend(handles=legend_entries, loc='lower right', fontsize='x-small', framealpha=0.5)
 
+
+        # Draw the circles on bev_img
         # Define circle parameters
         num_circles = 8
         radius_increment = 0.1
-        center = (0.5, 0.01)  # Adjusted y-coordinate
-
+        center = (0.5, 0.05)  # Adjusted y-coordinate
         for i in range(num_circles):
             radius = (i + 1) * radius_increment
+            linewidth = (num_circles - i) * 2  # Varying linewidth
+
+            cv2.circle(bev_img, (int(center[0] * self.shape), int(center[1] * self.shape)), int(radius * self.shape), (150, 10, 0), linewidth)
             circle = plt.Circle(center, radius, fill=False, color='blue')
-            self.ax3.add_patch(circle)
-            
-        # Draw the circles on bev_img
-        for i in range(num_circles):
-            radius = (i + 1) * radius_increment
-            cv2.circle(bev_img, (int(center[0] * self.shape), int(center[1] * self.shape)), int(radius * self.shape), (0, 0, 255), 1)
+            self.ax2.add_patch(circle)
 
-            # Add text above the circle
             text_content = f'{round((i + 1) * 9.6, 2)} m'
             text_position = ( 30 , center[1] * self.shape + radius * self.shape + 10)  # Adjusted position
             # print(text_position)
-            self.ax3.text(text_position[0], text_position[1], text_content, color='white', fontsize=6, va='center', ha='center')
+            self.ax2.text(text_position[0], text_position[1], text_content, color='white', fontsize=6, va='center', ha='center')
 
-        # Draw the circles on bev_img
-        for i in range(num_circles):
-            radius = (i + 1) * radius_increment
-            cv2.circle(bev_img, (int(center[0] * self.shape), int(center[1] * self.shape)), int(radius * self.shape), (0, 0, 255), 1)
+
+
+        # ## draw  objects trajectories
+        # obj_id = None
+        # for obj_id, centroids_deque in tracking_trajectories.items():
+        #     centroids_list = list(centroids_deque)
+        #     for i in range(1, len(centroids_list)):
+        #         start_point = tuple(map(int, centroids_list[i - 1]))
+        #         end_point = tuple(map(int, centroids_list[i]))
+        #         cv2.line(bev_img, start_point, end_point, (0, 255, 0), 2)
+
+
+        # Get the last three object IDs
+        last_three_obj_ids = list(tracking_trajectories.keys())[-3:]
+        # Draw trajectories for the last three objects
+        for obj_id in last_three_obj_ids:
+            centroids_deque = tracking_trajectories[obj_id]
+            centroids_list = list(centroids_deque)
+            for i in range(1, len(centroids_list)):
+                start_point = tuple(map(int, centroids_list[i - 1]))
+                end_point = tuple(map(int, centroids_list[i]))
+                cv2.line(bev_img, start_point, end_point, (0, 255, 0), 2)
+
+        # Delete centroids of previous objects
+        for obj_id in list(tracking_trajectories.keys()):
+            if obj_id not in last_three_obj_ids:
+                tracking_trajectories[obj_id].clear()
 
 
         # plot camera view range
         x1 = np.linspace(0, self.shape / 2)
         x2 = np.linspace(self.shape / 2, self.shape)
-        # self.ax3.plot(x1, self.shape / 2 - x1, ls="--", color="grey", linewidth=1, alpha=0.5)
-        # self.ax3.plot(x2, x2 - self.shape / 2, ls="--", color="grey", linewidth=1, alpha=0.5)
-        self.ax3.plot(self.shape / 2, 0, marker="+", markersize=2, markeredgecolor="red")
+        self.ax2.plot(x1, self.shape / 2 - x1, ls="--", color="grey", linewidth=3, alpha=0.3)
+        self.ax2.plot(x2, x2 - self.shape / 2, ls="--", color="grey", linewidth=3, alpha=0.3)
+        self.ax2.plot(self.shape / 2,40 , marker="+", markersize=16, markeredgecolor="red")
 
         # Display the image
-        self.ax3.imshow(bev_img, origin="lower")
-        self.ax3.set_xticks([])
-        self.ax3.set_yticks([])
-        self.ax3.set_aspect('equal', adjustable='box')
-        self.ax3.legend(handles=legend_entries, loc='lower right', fontsize='x-small', framealpha=0.5)
-
-        # self.fig2.savefig("testing_bev.png") ##testing
-        # bevimg_ = cv2.imread('testing_bev.png')
-        # cv2.imshow('testing_bev', bevimg_)
-        # cv2.waitKey(1)
+        self.ax2.imshow(bev_img, origin="lower")
+        self.ax2.set_xticks([])
+        self.ax2.set_yticks([])
+        self.ax2.set_aspect('equal', adjustable='box')
+        self.ax2.legend(handles=legend_entries, loc='lower right', fontsize='x-small', framealpha=0.7)
 
 
+    # def save_plot(self, path1, path2, name):
+    #     self.fig.savefig(
+    #         os.path.join(path1, f"{name}.png"),
+    #         dpi=self.fig.dpi,
+    #         bbox_inches="tight",
+    #         pad_inches=0.0,
+    #     )
+    #         # Close the figure
+    #     plt.close(self.fig)
 
-    def save_plot(self, path1, path2, name):
-        self.fig.savefig(
-            os.path.join(path1, f"{name}.png"),
-            dpi=self.fig.dpi,
-            bbox_inches="tight",
-            pad_inches=0.0,
-        )
-            # Close the figure
-        plt.close(self.fig)
+    #     self.fig2.savefig(os.path.join(path2, f"{name}.png"))
+    #     # Close the figure
+    #     plt.close(self.fig2)
 
-        self.fig2.savefig(os.path.join(path2, f"{name}.png"))
-        # Close the figure
-        plt.close(self.fig2)
+    # def show_result(self, path, name):
+    #     # Draw the Matplotlib figure
+    #     self.fig.canvas.draw()
 
-    def show_result(self, path, name):
-        # Draw the Matplotlib figure
-        self.fig.canvas.draw()
+    #     # Convert the figure to an image array
+    #     image = np.fromstring(self.fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    #     image = image.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
 
-        # Convert the figure to an image array
-        image = np.fromstring(self.fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-        image = image.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
-
-        # Display the image using OpenCV
-        cv2.imshow('Image', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        # self.fig.close()
+    #     # Display the image using OpenCV
+    #     cv2.imshow('Image', image)
+    #     cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
+    #     # self.fig.close()

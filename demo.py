@@ -9,6 +9,7 @@ from ultralytics import YOLO
 from collections import deque
 
 from libs.bbox3d_utils import *
+from libs.Plotting import *
 from train import * 
 
 
@@ -113,8 +114,10 @@ def process2D(image, track = True, device ='cpu'):
                 # Draw trajectories
                 for id_, trajectory in tracking_trajectories.items():
                     for i in range(1, len(trajectory)):
-                        cv2.line(image, (int(trajectory[i-1][0]), int(trajectory[i-1][1])), (int(trajectory[i][0]), int(trajectory[i][1])), (255, 255, 255), 2)
-                
+                        thickness = int(2 * (i / len(trajectory)) + 1)
+                        cv2.line(image, (int(trajectory[i-1][0]), int(trajectory[i-1][1])), 
+                                 (int(trajectory[i][0]), int(trajectory[i][1])), (255, 255, 255), thickness)
+
                 ## object segmentations
                 for mask in masks.xy:
                     polygon = mask
@@ -163,6 +166,7 @@ def process3D(img, bboxes2d):
         ymin = max(0, bbox_coords[1] - padding)
         xmax = min(frame.shape[1], bbox_coords[2] + padding)
         ymax = min(frame.shape[0], bbox_coords[3] + padding)
+        objID = id_
 
 
         crop = img[int(ymin) : int(ymax), int(xmin) : int(xmax)]
@@ -188,15 +192,22 @@ def process3D(img, bboxes2d):
         # update with predicted alpha, [-pi, pi]
         alpha = recover_angle(bin_anchor, bin_confidence, bin_size)
         alpha = alpha - theta_ray
-        bboxes.append([bbox_, dim, alpha, theta_ray])
+
+        # calculate the location   # plot 3d bbox
+        location, x = calc_location(dimension=dim, proj_matrix=P2, box_2d=bbox_, alpha=alpha, theta_ray=theta_ray)
+        bboxes.append([bbox_, dim, alpha, theta_ray, bin_anchor, bin_confidence, classes, location, objID])
 
     return bboxes
+
 
 
 
 frameId = 0
 start_time = time.time()
 fps = str()
+BEV_plot = False
+TracK = True
+
 # Process each frame of the video
 while True:
     frameId+=1
@@ -206,15 +217,40 @@ while True:
 
     img = frame.copy() 
     img2 = frame.copy() 
-    img3 = frame.copy() 
+    img3 = frame.copy()
+    plot3dbev = Plot3DBoxBev(P2)  
 
     ## process 2D and 3D boxes
-    img2D, bboxes2d = process2D(img2, track=True)
+    img2D, bboxes2d = process2D(img2, track=TracK)
     if len(bboxes2d) > 0:
         bboxes3D = process3D(img, bboxes2d)
         if len(bboxes3D) > 0:
-            for bbox_, dim, alpha, theta_ray in bboxes3D:
+            for bbox_, dim, alpha, theta_ray, orient, conf,  classes, location, objID in bboxes3D:
                 plot3d(img3, P2, bbox_, dim, alpha, theta_ray)
+
+                if BEV_plot:
+                    # initialize object container
+                    obj = KITTIObject()
+                    obj.name = str(yolo_classes[int(classes.cpu().numpy())])
+                    obj.truncation = float(0.00)
+                    obj.occlusion = int(-1)
+                    obj.xmin, obj.ymin, obj.xmax, obj.ymax = int(bbox_[0]), int(bbox_[1]), int(bbox_[2]), int(bbox_[3])
+
+                    obj.alpha = recover_angle(orient, conf, bin_size)
+                    obj.h, obj.w, obj.l = dim[0], dim[1], dim[2]
+                    obj.rot_global, rot_local = compute_orientaion(P2, obj)
+                    obj.tx, obj.ty, obj.tz = translation_constraints(P2, obj, rot_local)
+
+                    # plot 3d BEV bbox
+                    rot_y = alpha + theta_ray
+                    plot3dbev.plot(img=img3, class_object=obj.name.lower(), 
+                      bbox=[obj.xmin, obj.ymin, obj.xmax, obj.ymax],
+                      dim=[obj.h, obj.w, obj.l], loc=[obj.tx, obj.ty, obj.tz], rot_y=rot_y, objId=[objID] if not isinstance(objID, list) else objID)
+
+
+    if BEV_plot:
+        plot3dbev.plot(img=img3)
+        img3 = plot3dbev.show_result()
 
 
     # Calculate the current time in seconds
